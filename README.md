@@ -1,4 +1,4 @@
-# 🌍 GenShakti - Empowering Sustainable Development
+# 🌍  GenShakti - Advancing Sustainability Through Technology  
 
 **GenShakti** is a platform dedicated to promoting sustainable development by leveraging technology to engage individuals in eco-friendly practices. Built with **React** and **Vite**, it provides a seamless and modern experience for users.  
 
@@ -52,4 +52,3 @@ This project is licensed under the [MIT License](LICENSE).
 ---  
 
 🌟 **Star this repository** if you support sustainable development!  
-```
