@@ -5,7 +5,7 @@
 > **Note:** I am actively working on this project to improve **Sustainable Development Goal 7: Affordable and Clean Energy**, aiming to create solutions that enhance energy access and promote clean energy usage.
 
 ### 🌐 Live Demo  
-Check out the live project [here](https://gen-shakti.vercel.app/).  {not properly woking currently pleae wait thx}
+Check out the live project [here](https://genshakti.netlify.app/).  {not properly woking currently pleae wait thx}
 
 ## 🚀 Features  
 
