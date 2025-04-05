@@ -1,5 +1,12 @@
 import React from "react";
-import uc1 from "../assets/img/uc2.png";
+import uc1 from "../assets/img/uc1.png";
+import uc2 from "../assets/img/uc2.png";
+import uc3 from "../assets/img/uc3.png";
+import uc4 from "../assets/img/uc4.png";
+import uc5 from "../assets/img/uc5.png";
+import uc6 from "../assets/img/uc6.png";
+import uc7 from "../assets/img/uc7.png";
+import uc8 from "../assets/img/uc8.png";
 
 function UseCases() {
   return (
@@ -27,7 +34,7 @@ function UseCases() {
         <div className="bg-white p-4 border-2 border-[--lvl4] rounded-lg transform hover:scale-105 transition-transform duration-200">
           <h2 className="text-xl font-semibold mb-2">Optimize Location</h2>
           <img
-            src="/src/assets/img/uc2.png"
+            src={uc2}
             alt="Optimize location"
             className="w-full h-[300px] bg-[--lvl4] object-cover rounded-md mb-2"
           />
@@ -43,7 +50,7 @@ function UseCases() {
             Carbon Footprint Calculator
           </h2>
           <img
-            src="/src/assets/img/uc3.png"
+            src={uc3}
             alt="Carbon footprint calculator"
             className="w-full h-[300px] bg-[--lvl4] object-cover rounded-md mb-2"
           />
@@ -57,7 +64,7 @@ function UseCases() {
         <div className="bg-white p-4 border-2 border-[--lvl4] rounded-lg transform hover:scale-105 transition-transform duration-200">
           <h2 className="text-xl font-semibold mb-2">Active Tracker</h2>
           <img
-            src="/src/assets/img/uc4.png"
+            src={uc4}
             alt="Active tracker"
             className="w-full h-[300px] bg-[--lvl4] object-cover rounded-md mb-2"
           />
@@ -73,7 +80,7 @@ function UseCases() {
             EcoSync: Sustainability Hub
           </h2>
           <img
-            src="/src/assets/img/uc5.png"
+            src={uc5}
             alt="EcoSync sustainability hub"
             className="w-full h-[300px] bg-[--lvl4] object-cover rounded-md mb-2"
           />
@@ -89,7 +96,7 @@ function UseCases() {
             Personalized Energy Report
           </h2>
           <img
-            src="/src/assets/img/uc6.png"
+            src={uc6}
             alt="Personalized energy report"
             className="w-full h-[300px] bg-[--lvl4] object-cover rounded-md mb-2"
           />
@@ -105,7 +112,7 @@ function UseCases() {
             Carbon Reduction and Alternatives
           </h2>
           <img
-            src="/src/assets/img/uc7.png"
+            src={uc7}
             alt="Carbon reduction"
             className="w-full h-[300px] bg-[--lvl4] object-cover rounded-md mb-2"
           />
@@ -121,7 +128,7 @@ function UseCases() {
             Renewable Energy Capacity Dashboard
           </h2>
           <img
-            src="/src/assets/img/uc8.png"
+            src={uc8}
             alt="Renewable energy dashboard"
             className="w-full h-[300px] bg-[--lvl4] object-cover rounded-md mb-2"
           />
