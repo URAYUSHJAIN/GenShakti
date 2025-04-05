@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
+import genshakti from "../assets/img/genshakti.png";
 
 function Header() {
   const location = useLocation();
@@ -24,7 +25,7 @@ function Header() {
       <div className="container mx-auto px-4 py-2 flex items-center justify-between">
         <Link to="/" className="text-2xl text-[--lvl4] p-2 pr-6 rounded-[100px] tracking-[2px] font-bold flex items-center gap-2">
           <div className="h-10 w-10">
-            <img src="/src/assets/img/genshakti.png" className="h-full w-full object-cover" alt="Genshakti Logo"/>
+            <img src={genshakti} className="h-full w-full object-cover" alt="Genshakti Logo"/>
           </div>
           GENSHAKTI
         </Link>
