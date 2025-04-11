@@ -71,7 +71,7 @@ function App() {
       setCoordinates(parsedCoords);
 
       const infoPromises = parsedCoords.map(async (coord) => {
-        const infoPrompt = `Provide detailed information about the location at coordinates ${coord.lon},${coord.lat} in India for ${energyType} energy production. Format the response as follows:
+        const infoPrompt = `Provide detailed information about the location at coordinates ${coord.lat},${coord.lon} in India for ${energyType} energy production. Format the response as follows:
 
 Location Name: [Name of the location]
 
