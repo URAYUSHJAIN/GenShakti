@@ -22,7 +22,7 @@ const customIcon = L.divIcon({
 });
 
 
-const genAI = new GoogleGenerativeAI("AIzaSyD9KbgvwDkOZDi-X3yXSPZ2_vmLaP0Htq8");
+const genAI = new GoogleGenerativeAI("AIzaSyA48F45b9cyBlaEDc1pcr1u1r8L3nfuWiQ");
 const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
 // Function to calculate radius in meters from acres
