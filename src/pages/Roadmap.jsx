@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { generateAIResponse } from '../utils/aiProvider';
 import ReactFlow, { Background, Controls, MiniMap } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -10,9 +10,6 @@ const RoadmapGenerator = () => {
   const [edges, setEdges] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  const genAI = new GoogleGenerativeAI('AIzaSyD9KbgvwDkOZDi-X3yXSPZ2_vmLaP0Htq8');
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
   const handleTypeChange = (e) => {
     setType(e.target.value);
@@ -49,8 +46,7 @@ const RoadmapGenerator = () => {
     Also add more details to the steps and details about the product to use. Provide the steps as a list without asterisks or numbers.`;
 
     try {
-      const result = await model.generateContent(prompt);
-      const roadmapText = result.response.text();
+      const roadmapText = await generateAIResponse(prompt);
       const steps = roadmapText
         .split('\n')
         .filter((step) => step.trim() !== '')

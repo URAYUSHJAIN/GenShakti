@@ -1,31 +1,19 @@
 // src/AiGenerator.js
 import React, { useState } from "react";
-import { HfInference } from "@huggingface/inference";
+import { generateAIResponse } from "../utils/aiProvider";
 
 const AiGenerator = () => {
   const [prompt, setPrompt] = useState("");
   const [output, setOutput] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const client = new HfInference("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");
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const chatCompletion = await client.chatCompletion({
-        model: "mistralai/Mistral-Nemo-Instruct-2407",
-        messages: [
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-        max_tokens: 500,
-      });
-
-      setOutput(chatCompletion.choices[0].message.content);
+      const result = await generateAIResponse(prompt);
+      setOutput(result);
     } catch (error) {
       console.error("Error generating text:", error);
       setOutput("Error generating text. Please try again.");

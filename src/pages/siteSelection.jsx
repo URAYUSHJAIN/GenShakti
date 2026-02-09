@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { useState, useEffect } from 'react';
+import { generateAIResponse } from "../utils/aiProvider";
 import { MapContainer, TileLayer, Marker, Tooltip, Circle } from "react-leaflet";
+import L from 'leaflet';
 import "leaflet/dist/leaflet.css";
 
 
@@ -21,9 +22,6 @@ const customIcon = L.divIcon({
   iconAnchor: [12, 24],
 });
 
-
-const genAI = new GoogleGenerativeAI("AIzaSyA48F45b9cyBlaEDc1pcr1u1r8L3nfuWiQ");
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
 // Function to calculate radius in meters from acres
 const calculateRadius = (acres) => {
@@ -54,55 +52,87 @@ function App() {
     setError('');
     setLoading(true);
 
-    const prompt = `Generate coordinates (longitude, latitude) only in India that are optimal for constructing the specified renewable energy source based on the following user inputs:
-    Energy Type: ${energyType}
-    Land Area: ${landAcres} acres
-    Remarks: ${remarks}
-    Consider the environmental and climatic conditions necessary for the energy source: For Solar: prioritize areas with high solar irradiance. For Wind: prioritize areas with consistent and strong wind speeds. For Hybrid: prioritize areas suitable for both solar and wind energy. Also, consider regions where land of the specified size is likely to be available within the given budget. Output only the coordinates in the format {Longitude},{Latitude}, without any additional text.`;
+    const prompt = `Generate exactly 5 optimal locations in India for ${energyType} energy (Land: ${landAcres} acres). ${remarks}
+
+Return ONLY coordinate pairs, one per line, in this exact format:
+longitude,latitude
+
+Example format:
+78.9629,20.5937
+77.1025,28.7041
+
+Requirements:
+- Solar: high solar irradiance areas
+- Wind: areas with consistent strong winds  
+- Hybrid: suitable for both solar and wind
+- Output ONLY numbers and commas, NO text, NO labels, NO explanations`;
 
     try {
-      const result = await model.generateContent(prompt);
-      const coordsText = result.response.text();
-      const coordsArray = coordsText.split('\n').map(coord => coord.trim()).filter(coord => coord);
-      const parsedCoords = coordsArray.map(coord => {
-        const [lon, lat] = coord.split(',').map(Number);
-        return { lon, lat };
-      });
+      const coordsText = await generateAIResponse(prompt);
+      
+      // Extract all numbers from the response
+      const coordsArray = coordsText
+        .split(/[\n\r]+/)
+        .map(line => line.trim())
+        .filter(line => line && /^-?\d+\.?\d*,-?\d+\.?\d*$/.test(line));
+      
+      const parsedCoords = coordsArray
+        .map(coord => {
+          const [lon, lat] = coord.split(',').map(Number);
+          return { lon, lat };
+        })
+        .filter(coord => !isNaN(coord.lon) && !isNaN(coord.lat) && 
+                         coord.lat >= 8 && coord.lat <= 37 && 
+                         coord.lon >= 68 && coord.lon <= 97); // India bounds
+      
+      if (parsedCoords.length === 0) {
+        setError('Failed to parse valid coordinates from AI response. Please try again.');
+        setLoading(false);
+        return;
+      }
+      
       setCoordinates(parsedCoords);
 
       const infoPromises = parsedCoords.map(async (coord) => {
-        const infoPrompt = `Provide detailed information about the location at coordinates ${coord.lat},${coord.lon} in India for ${energyType} energy production. Format the response as follows:
+        const infoPrompt = `For coordinates ${coord.lat}°N, ${coord.lon}°E in India (${energyType} energy, ${landAcres} acres):
 
-Location Name: [Name of the location]
+Location Name: 
+[City/Region name]
 
-Climatic Conditions:
-[Technical description of the climatic conditions suitable for ${energyType} energy]
+Climate:
+[Brief climate suitability for ${energyType}]
 
 Benefits:
-[Benefits of building a ${energyType} energy source at this location]
+[2-3 key benefits]
 
-Costing Breakdown:
-[Detailed breakdown of the estimated costs for constructing and operating a ${energyType} energy source on ${landAcres} acres of land]
+Estimated Cost:
+[Cost range in INR for ${landAcres} acres]`;
 
-Ensure each section is clearly separated anf also get me the tst without astrixs.`;
+        try {
+          const infoText = await generateAIResponse(infoPrompt);
 
-        const infoResult = await model.generateContent(infoPrompt);
-        const infoText = infoResult.response.text();
-
-
-        const lines = infoText.split('\n');
-        let name = '';
-        let info = '';
-        lines.forEach(line => {
-          if (line.startsWith('Location Name:')) {
-            name = line.replace('Location Name:', '').trim();
-          } else {
-            info += line + '\n';
-          }
-        });
-        
-        return { coord, name, info };
+          const lines = infoText.split('\n');
+          let name = '';
+          let info = '';
+          lines.forEach(line => {
+            if (line.startsWith('Location Name:')) {
+              name = line.replace('Location Name:', '').trim();
+            } else {
+              info += line + '\n';
+            }
+          });
+          
+          return { coord, name: name || 'Unknown Location', info };
+        } catch (error) {
+          console.error('Error fetching location info:', error);
+          return { 
+            coord, 
+            name: 'Location Info Unavailable', 
+            info: 'Could not load details for this location. Please try again.' 
+          };
+        }
       });
+      
       const infos = await Promise.all(infoPromises);
       const infoMap = infos.reduce((acc, { coord, name, info }) => {
         acc[`${coord.lon},${coord.lat}`] = { name, info };

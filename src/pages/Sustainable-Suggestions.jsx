@@ -1,6 +1,6 @@
 // src/AiGenerator.js
 import React, { useState } from "react";
-import { HfInference } from "@huggingface/inference";
+import { generateAIResponse } from "../utils/aiProvider";
 
 const SustainableSuggestions = () => {
   const [transport, setTransport] = useState("");
@@ -9,8 +9,6 @@ const SustainableSuggestions = () => {
   const [output, setOutput] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const client = new HfInference("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");
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -18,18 +16,7 @@ const SustainableSuggestions = () => {
     try {
       const prompt = `Suggest 5 short and crisp points for sustainable development to reduce carbon emission based on the following parameters:\nTransport preference: ${transport}\nEnergy consumption: ${energy}\nWaste generation: ${waste}. make sure to display only main key points and the points should be practically more possible in India. `;
 
-      const chatCompletion = await client.chatCompletion({
-        model: "mistralai/Mistral-Nemo-Instruct-2407",
-        messages: [
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-        max_tokens: 500,
-      });
-
-      const generatedText = chatCompletion.choices[0].message.content;
+      const generatedText = await generateAIResponse(prompt);
       const points = generatedText
         .split("\n")
         .filter((point) => point.trim() !== "");

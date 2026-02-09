@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { generateAIResponse } from "../utils/aiProvider";
 import { Bar, Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -240,40 +241,12 @@ const RenewableEnergyDashboard = () => {
   ]);
 
   const getAIRecommendation = async (energyType, data) => {
-    const apiKey = "AIzaSyBSXHhf3NbiahDw3VT5jzTdMgv9I-1Ctds";
     const prompt = `Provide a recommendation for ${energyType} energy based on the following data. Limit the response to 27 words: ${JSON.stringify(
       data
     )}`;
 
     try {
-      const response = await fetch(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=" +
-          apiKey,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [
-                  {
-                    text: prompt,
-                  },
-                ],
-              },
-            ],
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`API request failed with status ${response.status}`);
-      }
-
-      const result = await response.json();
-      return result.candidates[0].content.parts[0].text;
+      return await generateAIResponse(prompt);
     } catch (error) {
       console.error("Error fetching AI recommendation:", error);
       return "Failed to fetch recommendation.";
