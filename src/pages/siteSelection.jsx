@@ -52,61 +52,76 @@ function App() {
     setError('');
     setLoading(true);
 
-    const prompt = `Generate exactly 5 optimal locations in India for ${energyType} energy (Land: ${landAcres} acres). ${remarks}
+    const prompt = `You are a geographic data API. Your task: output exactly 5 latitude,longitude coordinate pairs for optimal ${energyType} energy sites in India requiring ${landAcres} acres of land.${remarks ? ` Additional context: ${remarks}` : ''}
 
-Return ONLY coordinate pairs, one per line, in this exact format:
-longitude,latitude
+Rules for site selection:
+- SOLAR: Pick locations with highest annual solar irradiance (Rajasthan, Gujarat, Tamil Nadu, Andhra Pradesh, Madhya Pradesh).
+- WIND: Pick locations with strongest consistent winds (coastal Tamil Nadu, Gujarat coast, Karnataka, Rajasthan, Maharashtra).
+- HYBRID: Pick locations suitable for both solar panels and wind turbines.
 
-Example format:
-78.9629,20.5937
-77.1025,28.7041
+CRITICAL: Your ENTIRE response must be ONLY 5 lines. Each line must contain ONLY two decimal numbers separated by a comma. The format is: latitude,longitude
+No text. No labels. No numbering. No explanations. No blank lines.
 
-Requirements:
-- Solar: high solar irradiance areas
-- Wind: areas with consistent strong winds  
-- Hybrid: suitable for both solar and wind
-- Output ONLY numbers and commas, NO text, NO labels, NO explanations`;
+Example of correct response:
+26.9124,70.9000
+23.0225,72.5714
+11.1271,78.6569
+15.9129,79.7400
+24.5854,73.7125`;
 
     try {
       const coordsText = await generateAIResponse(prompt);
-      
-      // Extract all numbers from the response
-      const coordsArray = coordsText
-        .split(/[\n\r]+/)
-        .map(line => line.trim())
-        .filter(line => line && /^-?\d+\.?\d*,-?\d+\.?\d*$/.test(line));
-      
-      const parsedCoords = coordsArray
-        .map(coord => {
-          const [lon, lat] = coord.split(',').map(Number);
-          return { lon, lat };
+
+      console.log("AI raw response:", coordsText);
+
+      // Robust parser: extract all number pairs that look like coordinates
+      const coordRegex = /(-?\d{1,3}\.?\d*)\s*[,\s]\s*(-?\d{1,3}\.?\d*)/g;
+      const matches = [...coordsText.matchAll(coordRegex)];
+
+      const parsedCoords = matches
+        .map(match => {
+          let num1 = parseFloat(match[1]);
+          let num2 = parseFloat(match[2]);
+
+          // Determine which is lat and which is lon
+          // India lat: 8-37, lon: 68-97
+          let lat, lon;
+          if (num1 >= 8 && num1 <= 37 && num2 >= 68 && num2 <= 97) {
+            lat = num1; lon = num2; // lat,lon format
+          } else if (num2 >= 8 && num2 <= 37 && num1 >= 68 && num1 <= 97) {
+            lat = num2; lon = num1; // lon,lat format
+          } else {
+            return null; // Not valid India coordinates
+          }
+          return { lat, lon };
         })
-        .filter(coord => !isNaN(coord.lon) && !isNaN(coord.lat) && 
-                         coord.lat >= 8 && coord.lat <= 37 && 
-                         coord.lon >= 68 && coord.lon <= 97); // India bounds
-      
-      if (parsedCoords.length === 0) {
+        .filter(coord => coord !== null);
+
+      // Remove duplicates (same coords within 0.01 degree)
+      const uniqueCoords = parsedCoords.filter((coord, idx, arr) =>
+        idx === arr.findIndex(c =>
+          Math.abs(c.lat - coord.lat) < 0.01 && Math.abs(c.lon - coord.lon) < 0.01
+        )
+      ).slice(0, 5);
+
+      if (uniqueCoords.length === 0) {
         setError('Failed to parse valid coordinates from AI response. Please try again.');
         setLoading(false);
         return;
       }
-      
-      setCoordinates(parsedCoords);
 
-      const infoPromises = parsedCoords.map(async (coord) => {
-        const infoPrompt = `For coordinates ${coord.lat}°N, ${coord.lon}°E in India (${energyType} energy, ${landAcres} acres):
+      setCoordinates(uniqueCoords);
 
-Location Name: 
-[City/Region name]
+      const infoPromises = uniqueCoords.map(async (coord) => {
+        const infoPrompt = `Give brief info about the location at ${coord.lat}°N, ${coord.lon}°E in India for a ${energyType} energy project on ${landAcres} acres of land.
 
-Climate:
-[Brief climate suitability for ${energyType}]
+Respond in this exact format (fill in the brackets):
+Location Name: [nearest city or region name]
+Climate: [one line about climate suitability for ${energyType} energy]
+Benefits: [2-3 key benefits, comma separated]
+Estimated Cost: [rough cost range in INR crores for ${landAcres} acres ${energyType} setup]
 
-Benefits:
-[2-3 key benefits]
-
-Estimated Cost:
-[Cost range in INR for ${landAcres} acres]`;
+No extra text. Just fill the 4 fields above.`;
 
         try {
           const infoText = await generateAIResponse(infoPrompt);
@@ -121,18 +136,18 @@ Estimated Cost:
               info += line + '\n';
             }
           });
-          
+
           return { coord, name: name || 'Unknown Location', info };
         } catch (error) {
           console.error('Error fetching location info:', error);
-          return { 
-            coord, 
-            name: 'Location Info Unavailable', 
-            info: 'Could not load details for this location. Please try again.' 
+          return {
+            coord,
+            name: 'Location Info Unavailable',
+            info: 'Could not load details for this location. Please try again.'
           };
         }
       });
-      
+
       const infos = await Promise.all(infoPromises);
       const infoMap = infos.reduce((acc, { coord, name, info }) => {
         acc[`${coord.lon},${coord.lat}`] = { name, info };
@@ -194,8 +209,8 @@ Estimated Cost:
       </div>
 
       {/* Generate Button */}
-      <button 
-        onClick={handleGenerate} 
+      <button
+        onClick={handleGenerate}
         disabled={loading}
         className="generate-btn"
       >
@@ -209,41 +224,41 @@ Estimated Cost:
       {coordinates.length > 0 && (
         <div className="content-container">
           <div className="map-container">
-          <MapContainer center={[20.5937, 78.9629]} zoom={5} style={{ height: "500px", width: "100%" }}>
-      <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      />
-      {coordinates.map((coord, index) => (
-        <Marker
-          key={index}
-          position={[coord.lat, coord.lon]}
-          icon={customIcon}
-          eventHandlers={{
-            click: () => {
-              setSelectedCoord(`${coord.lon},${coord.lat}`);
-            },
-          }}
-        >
-          <Tooltip>{locationInfo[`${coord.lon},${coord.lat}`]?.name || 'Unknown Location'}</Tooltip>
-          <Circle
-            center={[coord.lat, coord.lon]}
-            radius={calculateRadius(landAcres)}
-            color="blue"
-            fillColor="blue"
-            fillOpacity={0.2}
-          />
-        </Marker>
-      ))}
-    </MapContainer>
+            <MapContainer center={[20.5937, 78.9629]} zoom={5} style={{ height: "500px", width: "100%" }}>
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              />
+              {coordinates.map((coord, index) => (
+                <Marker
+                  key={index}
+                  position={[coord.lat, coord.lon]}
+                  icon={customIcon}
+                  eventHandlers={{
+                    click: () => {
+                      setSelectedCoord(`${coord.lon},${coord.lat}`);
+                    },
+                  }}
+                >
+                  <Tooltip>{locationInfo[`${coord.lon},${coord.lat}`]?.name || 'Unknown Location'}</Tooltip>
+                  <Circle
+                    center={[coord.lat, coord.lon]}
+                    radius={calculateRadius(landAcres)}
+                    color="blue"
+                    fillColor="blue"
+                    fillOpacity={0.2}
+                  />
+                </Marker>
+              ))}
+            </MapContainer>
           </div>
           <div className="info-panel">
             {selectedCoord && locationInfo[selectedCoord] ? (
               <div>
                 <h2>{locationInfo[selectedCoord].name}</h2>
-                <a 
-                  href={generateUrl(selectedCoord.split(',')[1], selectedCoord.split(',')[0])} 
-                  target="_blank" 
+                <a
+                  href={generateUrl(selectedCoord.split(',')[1], selectedCoord.split(',')[0])}
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="map-link"
                 >
